@@ -1,9 +1,8 @@
 import random
 import json
 
-
 def createData():
-    return [round(random.uniform(20, 25)) for _ in range(10)]
+    return [round(random.uniform(20, 25)) for _ in range(100)]
 
 
 def createFile(data):
