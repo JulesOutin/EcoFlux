@@ -4,19 +4,21 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class Signinscreen extends StatefulWidget {
+  const Signinscreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
-  _LoginScreenState createState() => _LoginScreenState();
+  _SigninscreenState createState() => _SigninscreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+
+class _SigninscreenState extends State<Signinscreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+  final TextEditingController _confirmPassController = TextEditingController();
 
   String _email = "";
   String _password = "";
@@ -26,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: const Text('Sign In'),
       ),
       body : Center(
         child: Padding(
@@ -84,17 +86,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(
                   height: 20,
                 ),
+                TextFormField(
+                  controller: _confirmPassController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10.0))
+                    ),
+                    labelText: 'Confirm Password'
+                    ),
+                  validator: (String? value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your password';
+                    }
+                    if (value != _password) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       try {
-                        await _auth.signInWithEmailAndPassword(
+                        await _auth.createUserWithEmailAndPassword(
                           email: _email,
                           password: _password,
                         );
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Successfully login'),
+                            content: Text('Successfully signed up'),
                           ),
                           // si l'utilisateur est correctement connecté le renvoyer vers la page de note
                         );
@@ -110,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                     }
                   },
-                  child: const Text('Login'),
+                  child: const Text('Sign In'),
                 ),
               ],
             )
