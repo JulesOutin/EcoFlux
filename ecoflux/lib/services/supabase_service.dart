@@ -15,6 +15,21 @@ class SupabaseDataService implements IDataService {
   }
 
   @override
+  Future<void> addRoom(String name, String icon) async {
+    final userId = _supabase.auth.currentUser!.id;
+    await _supabase.from('rooms').insert({
+      'user_id': userId,
+      'name':    name,
+      'icon':    icon,
+    });
+  }
+
+  @override
+  Future<void> deleteRoom(String roomId) async {
+    await _supabase.from('rooms').delete().eq('id', roomId);
+  }
+
+  @override
   Stream<List<SensorData>> getSensorData(String roomId) {
     return _supabase
         .from('sensor_readings')
