@@ -1,6 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 
 
@@ -14,7 +14,7 @@ class Signinscreen extends StatefulWidget {
 
 
 class _SigninscreenState extends State<Signinscreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SupabaseClient _auth = Supabase.instance.client;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
@@ -115,25 +115,24 @@ class _SigninscreenState extends State<Signinscreen> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       try {
-                        await _auth.createUserWithEmailAndPassword(
+                        await _auth.auth.signUp(
                           email: _email,
                           password: _password,
                         );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Successfully signed up'),
-                          ),
-                          // si l'utilisateur est correctement connecté le renvoyer vers la page de note
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/rooms',
+                          (route) => false,
                         );
-                      } on FirebaseAuthException catch (e) {
+                      } on AuthException catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(e.message!),
+                            content: Text(e.message),
                           ),
                         );
                       } catch (e) {
-                        //TODO: Supprimer le print en production
-                        print(e);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Erreur réseau, réessaie.')),
+                        );
                       }
                     }
                   },

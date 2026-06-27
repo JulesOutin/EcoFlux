@@ -1,75 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'supabase_config.dart';
 import 'login/loginScreen.dart';
 import 'login/signInScreen.dart';
+import 'page/roomsScreen.dart';
+import 'page/dashboardScreen.dart';
+import 'page/accountScreen.dart';
 import 'welcome.dart';
+import 'models/property_models.dart';
+import 'services/data_service.dart';
+import 'services/supabase_service.dart';
 
+final IDataService dataService = SupabaseDataService();
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseAnonKey);
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/',
+      home: const AuthGate(),
       routes: {
-        '/' : (context) => const Welcome(),
-        '/login' : (context) => const LoginScreen(),
-        '/signup' : (context) => const Signinscreen(),
+        '/welcome':   (context) => const Welcome(),
+        '/login':     (context) => const LoginScreen(),
+        '/signup':    (context) => const Signinscreen(),
+        '/rooms':     (context) => RoomsScreen(dataService: dataService),
+        '/dashboard': (context) {
+          final room = ModalRoute.of(context)!.settings.arguments as Room;
+          return DashboardScreen(room: room, dataService: dataService);
+        },
+        '/account':   (context) => const Accountscreen(),
       },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          return RoomsScreen(dataService: dataService);
+        }
+        return const Welcome();
+      },
     );
   }
 }
