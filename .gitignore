@@ -1,6 +1,9 @@
 # Système
 .DS_Store
 
+# Variables d'environnement (contient la service role key)
+.env
+
 # Claude Code
 CLAUDE.md
 .claude/
