@@ -4,7 +4,9 @@ import '../models/property_models.dart';
 abstract class IDataService {
   Future<List<Room>> getRooms();
   Future<void> addRoom(String name, String icon);
+  Future<void> updateRoom(String id, String name, String icon);
   Future<void> deleteRoom(String roomId);
+  Future<void> reorderRooms(List<String> orderedIds);
   Stream<List<SensorData>> getSensorData(String roomId);
 }
 
@@ -24,8 +26,16 @@ class CsvDataService implements IDataService {
       throw UnimplementedError('CsvDataService ne supporte pas addRoom');
 
   @override
+  Future<void> updateRoom(String id, String name, String icon) =>
+      throw UnimplementedError('CsvDataService ne supporte pas updateRoom');
+
+  @override
   Future<void> deleteRoom(String roomId) =>
       throw UnimplementedError('CsvDataService ne supporte pas deleteRoom');
+
+  @override
+  Future<void> reorderRooms(List<String> orderedIds) =>
+      throw UnimplementedError('CsvDataService ne supporte pas reorderRooms');
 
   @override
   Stream<List<SensorData>> getSensorData(String roomId) {
