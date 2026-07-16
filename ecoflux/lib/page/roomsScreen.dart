@@ -7,8 +7,9 @@ import '../models/property_models.dart';
 import '../services/data_service.dart';
 
 class RoomsScreen extends StatefulWidget {
+  final Property property;
   final IDataService dataService;
-  const RoomsScreen({super.key, required this.dataService});
+  const RoomsScreen({super.key, required this.property, required this.dataService});
 
   @override
   State<RoomsScreen> createState() => _RoomsScreenState();
@@ -37,7 +38,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   Future<void> _reload() async {
     setState(() => _loading = true);
     try {
-      final rooms = await widget.dataService.getRooms();
+      final rooms = await widget.dataService.getRooms(widget.property.id);
       setState(() {
         _rooms = rooms;
         _loading = false;
@@ -108,7 +109,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
     if (name.isEmpty) return;
 
     try {
-      await widget.dataService.addRoom(name, selectedIcon);
+      await widget.dataService.addRoom(widget.property.id, name, selectedIcon);
       _reload();
     } on PostgrestException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -319,7 +320,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mon logement'),
+        title: Text(widget.property.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),

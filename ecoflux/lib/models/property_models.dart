@@ -11,7 +11,6 @@ class SensorData {
     required this.pressure,
   });
 
-  // Attend une ligne CSV : "2024-01-15T10:30:00,21.5,58.3,1013.2"
   factory SensorData.fromCsv(String line) {
     final parts = line.split(',');
     if (parts.length < 4) throw FormatException('Invalid CSV line: $line');
@@ -23,7 +22,6 @@ class SensorData {
     );
   }
 
-  // Colonnes Supabase : recorded_at, temperature, humidity, pressure
   factory SensorData.fromMap(Map<String, dynamic> map) => SensorData(
     timestamp:   DateTime.parse(map['recorded_at'] as String),
     temperature: (map['temperature'] as num).toDouble(),
@@ -56,5 +54,38 @@ class Room {
     id:   map['id']   as String,
     name: map['name'] as String,
     icon: map['icon'] as String,
+  );
+}
+
+class Property {
+  final String id;
+  final String name;
+  final String type;
+  final String? address;
+  final double? surfaceM2;
+  final int? floor;
+  final int? yearBuilt;
+  final int position;
+
+  const Property({
+    required this.id,
+    required this.name,
+    required this.type,
+    this.address,
+    this.surfaceM2,
+    this.floor,
+    this.yearBuilt,
+    required this.position,
+  });
+
+  factory Property.fromMap(Map<String, dynamic> map) => Property(
+    id:        map['id']        as String,
+    name:      map['name']      as String,
+    type:      map['type']      as String? ?? 'apartment',
+    address:   map['address']   as String?,
+    surfaceM2: (map['surface_m2'] as num?)?.toDouble(),
+    floor:     map['floor']     as int?,
+    yearBuilt: map['year_built'] as int?,
+    position:  map['position']  as int? ?? 0,
   );
 }

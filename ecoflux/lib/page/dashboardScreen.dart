@@ -36,6 +36,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   String _shortDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}';
 
+  // Pas d'axe Y adapté à la plage de données pour éviter les doublons d'étiquettes
+  double _niceInterval(double range) {
+    if (range <= 5)   return 1;
+    if (range <= 15)  return 2;
+    if (range <= 40)  return 5;
+    if (range <= 100) return 10;
+    return 20;
+  }
+
   List<FlSpot> _toSpots(List<double> values) => values
       .asMap()
       .entries
@@ -46,15 +55,21 @@ class _DashboardScreenState extends State<DashboardScreen>
     List<SensorData> data,
     Color color,
     String unit,
-    double Function(SensorData) getValue,
-  ) {
+    double Function(SensorData) getValue, {
+    int decimals = 1,
+  }) {
     final values = data.map(getValue).toList();
     if (values.isEmpty) return const Center(child: CircularProgressIndicator());
 
     final spots = _toSpots(values);
-    final minY = values.reduce((a, b) => a < b ? a : b);
-    final maxY = values.reduce((a, b) => a > b ? a : b);
-    final padding = (maxY - minY) * 0.15;
+    final rawMinY = values.reduce((a, b) => a < b ? a : b);
+    final rawMaxY = values.reduce((a, b) => a > b ? a : b);
+    final padding  = (rawMaxY - rawMinY) * 0.15;
+    final interval = _niceInterval(rawMaxY - rawMinY);
+    // Bornes alignées sur l'interval pour que le bord du graphique coïncide
+    // toujours avec une étiquette, sinon fl_chart ajoute un doublon au bord.
+    final minY = ((rawMinY - padding) / interval).floor() * interval;
+    final maxY = ((rawMaxY + padding) / interval).ceil() * interval;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 24, 24, 16),
@@ -72,10 +87,11 @@ class _DashboardScreenState extends State<DashboardScreen>
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 56,
+                interval: interval,
                 getTitlesWidget: (value, meta) => Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: Text(
-                    '${value.toStringAsFixed(1)}$unit',
+                    '${value.toStringAsFixed(decimals)}$unit',
                     style: const TextStyle(fontSize: 10),
                     textAlign: TextAlign.right,
                   ),
@@ -120,8 +136,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
           ],
-          minY: minY - padding,
-          maxY: maxY + padding,
+          minY: minY,
+          maxY: maxY,
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               getTooltipItems: (spots) => spots.map((s) {
@@ -130,7 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ? _shortDate(data[idx].timestamp)
                     : '';
                 return LineTooltipItem(
-                  '$label\n${s.y.toStringAsFixed(2)}$unit',
+                  '$label\n${s.y.toStringAsFixed(decimals)}$unit',
                   const TextStyle(fontSize: 12, color: Colors.white),
                 );
               }).toList(),
@@ -175,9 +191,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           return TabBarView(
             controller: _tabController,
             children: [
-              _buildChart(data, Colors.deepOrange, '°C',    (s) => s.temperature),
-              _buildChart(data, Colors.blue,       '%',     (s) => s.humidity),
-              _buildChart(data, Colors.green,      ' hPa',  (s) => s.pressure),
+              _buildChart(data, Colors.deepOrange, '°C',   (s) => s.temperature, decimals: 0),
+              _buildChart(data, Colors.blue,       '%',    (s) => s.humidity,    decimals: 0),
+              _buildChart(data, Colors.green,      ' hPa', (s) => s.pressure,    decimals: 0),
             ],
           );
         },

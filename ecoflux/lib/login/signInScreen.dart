@@ -120,7 +120,7 @@ class _SigninscreenState extends State<Signinscreen> {
                           password: _password,
                         );
                         Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/rooms',
+                          '/properties',
                           (route) => false,
                         );
                       } on AuthException catch (e) {

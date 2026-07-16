@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           password: _password,
                         );
                         Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/rooms',
+                          '/properties',
                           (route) => false,
                         );
                       } on AuthException catch (e) {

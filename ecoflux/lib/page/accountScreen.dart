@@ -1,6 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Accountscreen extends StatefulWidget {
@@ -19,6 +21,8 @@ class _AccountScreenState extends State<Accountscreen> {
 
   bool _loading = true;
   bool _saving = false;
+  bool _uploadingAvatar = false;
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -38,28 +42,97 @@ class _AccountScreenState extends State<Accountscreen> {
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    // Pré-remplir depuis user_metadata si disponible
     final meta = user.userMetadata ?? {};
     _firstNameController.text = meta['first_name'] as String? ?? '';
     _lastNameController.text  = meta['last_name']  as String? ?? '';
 
-    // Charger les données étendues depuis la table profiles
     try {
       final data = await _supabase
           .from('profiles')
-          .select('first_name, last_name')
+          .select('first_name, last_name, avatar_url')
           .eq('id', user.id)
           .maybeSingle();
 
       if (data != null) {
-        _firstNameController.text = data['first_name'] as String? ?? _firstNameController.text;
-        _lastNameController.text  = data['last_name']  as String? ?? _lastNameController.text;
+        _firstNameController.text =
+            data['first_name'] as String? ?? _firstNameController.text;
+        _lastNameController.text =
+            data['last_name'] as String? ?? _lastNameController.text;
+        _avatarUrl = data['avatar_url'] as String?;
       }
     } on PostgrestException {
-      // Table profiles absente ou RLS bloque — on garde les valeurs de user_metadata
+      // RLS bloque ou table absente — on garde les valeurs de user_metadata
     }
 
     setState(() => _loading = false);
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Galerie'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Caméra'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      maxWidth: 512,
+      maxHeight: 512,
+      imageQuality: 85,
+    );
+    if (picked == null) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+      final file = File(picked.path);
+      final path = '$userId/avatar.jpg';
+
+      await _supabase.storage.from('avatars').upload(
+        path,
+        file,
+        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+      );
+
+      final url = _supabase.storage.from('avatars').getPublicUrl(path);
+      // Bust cache en ajoutant un timestamp
+      final cacheBustedUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}';
+
+      await _supabase.from('profiles').upsert({
+        'id':         userId,
+        'avatar_url': cacheBustedUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      setState(() => _avatarUrl = cacheBustedUrl);
+    } on StorageException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur upload : ${e.message}')),
+      );
+    } on PostgrestException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur base de données : ${e.message}')),
+      );
+    } finally {
+      setState(() => _uploadingAvatar = false);
+    }
   }
 
   Future<void> _save() async {
@@ -72,7 +145,6 @@ class _AccountScreenState extends State<Accountscreen> {
     final userId    = _supabase.auth.currentUser!.id;
 
     try {
-      // Upsert dans la table profiles
       await _supabase.from('profiles').upsert({
         'id':         userId,
         'first_name': firstName,
@@ -80,11 +152,8 @@ class _AccountScreenState extends State<Accountscreen> {
         'updated_at': DateTime.now().toIso8601String(),
       });
 
-      // Mise à jour du mot de passe uniquement si renseigné
       if (password.isNotEmpty) {
-        await _supabase.auth.updateUser(
-          UserAttributes(password: password),
-        );
+        await _supabase.auth.updateUser(UserAttributes(password: password));
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -114,6 +183,63 @@ class _AccountScreenState extends State<Accountscreen> {
     navigator.pushNamedAndRemoveUntil('/welcome', (route) => false);
   }
 
+  Widget _buildAvatar() {
+    final initials = [
+      _firstNameController.text.isNotEmpty
+          ? _firstNameController.text[0].toUpperCase()
+          : '',
+      _lastNameController.text.isNotEmpty
+          ? _lastNameController.text[0].toUpperCase()
+          : '',
+    ].join();
+
+    return GestureDetector(
+      onTap: _uploadingAvatar ? null : _pickAndUploadAvatar,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircleAvatar(
+            radius: 48,
+            backgroundColor:
+                Theme.of(context).colorScheme.primaryContainer,
+            backgroundImage:
+                _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+            child: _avatarUrl == null
+                ? Text(
+                    initials.isEmpty ? '?' : initials,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  )
+                : null,
+          ),
+          if (_uploadingAvatar)
+            const CircleAvatar(
+              radius: 48,
+              backgroundColor: Colors.black38,
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+            ),
+          if (!_uploadingAvatar)
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: CircleAvatar(
+                radius: 14,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Icon(
+                  Icons.camera_alt,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,13 +254,16 @@ class _AccountScreenState extends State<Accountscreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      _buildAvatar(),
+                      const SizedBox(height: 24),
                       TextFormField(
                         controller: _firstNameController,
                         keyboardType: TextInputType.name,
                         decoration: const InputDecoration(
                           labelText: 'Prénom',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10)),
                           ),
                         ),
                         validator: (v) =>
@@ -147,7 +276,8 @@ class _AccountScreenState extends State<Accountscreen> {
                         decoration: const InputDecoration(
                           labelText: 'Nom',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10)),
                           ),
                         ),
                         validator: (v) =>
@@ -160,7 +290,8 @@ class _AccountScreenState extends State<Accountscreen> {
                         decoration: const InputDecoration(
                           labelText: 'Nouveau mot de passe (optionnel)',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(10)),
                           ),
                         ),
                       ),
