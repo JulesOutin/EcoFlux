@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'login/loginScreen.dart';
 import 'login/signInScreen.dart';
-import 'page/roomsScreen.dart';
+import 'page/propertiesScreen.dart';
 import 'page/dashboardScreen.dart';
 import 'page/accountScreen.dart';
 import 'welcome.dart';
@@ -27,15 +27,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: const AuthGate(),
       routes: {
-        '/welcome':   (context) => const Welcome(),
-        '/login':     (context) => const LoginScreen(),
-        '/signup':    (context) => const Signinscreen(),
-        '/rooms':     (context) => RoomsScreen(dataService: dataService),
-        '/dashboard': (context) {
+        '/welcome':    (context) => const Welcome(),
+        '/login':      (context) => const LoginScreen(),
+        '/signup':     (context) => const Signinscreen(),
+        '/properties': (context) => PropertiesScreen(dataService: dataService),
+        '/dashboard':  (context) {
           final room = ModalRoute.of(context)!.settings.arguments as Room;
           return DashboardScreen(room: room, dataService: dataService);
         },
-        '/account':   (context) => const Accountscreen(),
+        '/account':    (context) => const Accountscreen(),
       },
     );
   }
@@ -56,7 +56,7 @@ class AuthGate extends StatelessWidget {
         }
         final session = Supabase.instance.client.auth.currentSession;
         if (session != null) {
-          return RoomsScreen(dataService: dataService);
+          return PropertiesScreen(dataService: dataService);
         }
         return const Welcome();
       },
