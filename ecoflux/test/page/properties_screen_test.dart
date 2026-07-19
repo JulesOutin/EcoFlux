@@ -77,4 +77,20 @@ void main() {
     verify(() => dataService.deleteProperty('p1')).called(1);
     verify(() => dataService.getProperties()).called(2); // chargement initial + reload
   });
+
+  testWidgets('meets basic accessibility guidelines (contraste, cibles tactiles)',
+      (tester) async {
+    when(() => dataService.getProperties()).thenAnswer((_) async => const [
+          Property(id: 'p1', name: 'Appart Paris', type: 'apartment', position: 0),
+        ]);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    handle.dispose();
+  });
 }

@@ -98,4 +98,20 @@ void main() {
     verify(() => dataService.deleteRoom('r1')).called(1);
     verify(() => dataService.getRooms('prop1')).called(2);
   });
+
+  testWidgets('meets basic accessibility guidelines (contraste, cibles tactiles)',
+      (tester) async {
+    when(() => dataService.getRooms('prop1')).thenAnswer((_) async => const [
+          Room(id: 'r1', name: 'Salon', icon: 'living'),
+        ]);
+
+    await tester.pumpWidget(buildSubject());
+    await tester.pumpAndSettle();
+
+    final handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    handle.dispose();
+  });
 }

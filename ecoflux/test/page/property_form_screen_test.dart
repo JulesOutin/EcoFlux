@@ -159,4 +159,15 @@ void main() {
     expect(find.text('Erreur réseau, réessaie.'), findsOneWidget);
     expect(find.text('Open form'), findsNothing); // l'écran reste ouvert
   });
+
+  testWidgets('meets basic accessibility guidelines (contraste, cibles tactiles)',
+      (tester) async {
+    await openForm(tester);
+
+    final handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    handle.dispose();
+  });
 }

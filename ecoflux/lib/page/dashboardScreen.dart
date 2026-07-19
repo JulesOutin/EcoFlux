@@ -54,6 +54,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildChart(
     List<SensorData> data,
     Color color,
+    String metricLabel,
     String unit,
     double Function(SensorData) getValue, {
     int decimals = 1,
@@ -71,7 +72,18 @@ class _DashboardScreenState extends State<DashboardScreen>
     final minY = ((rawMinY - padding) / interval).floor() * interval;
     final maxY = ((rawMaxY + padding) / interval).ceil() * interval;
 
-    return Padding(
+    // Le graphique fl_chart est rendu sur canvas : illisible pour un lecteur
+    // d'écran. On l'exclut de l'arbre sémantique au profit d'un résumé textuel.
+    final summary = '$metricLabel : dernière valeur '
+        '${values.last.toStringAsFixed(decimals)}$unit, '
+        'minimum ${rawMinY.toStringAsFixed(decimals)}$unit, '
+        'maximum ${rawMaxY.toStringAsFixed(decimals)}$unit, '
+        '${data.length} relevés affichés.';
+
+    return Semantics(
+      label: summary,
+      child: ExcludeSemantics(
+        child: Padding(
       padding: const EdgeInsets.fromLTRB(8, 24, 24, 16),
       child: LineChart(
         LineChartData(
@@ -154,6 +166,8 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         ),
       ),
+        ),
+      ),
     );
   }
 
@@ -191,9 +205,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           return TabBarView(
             controller: _tabController,
             children: [
-              _buildChart(data, Colors.deepOrange, '°C',   (s) => s.temperature, decimals: 0),
-              _buildChart(data, Colors.blue,       '%',    (s) => s.humidity,    decimals: 0),
-              _buildChart(data, Colors.green,      ' hPa', (s) => s.pressure,    decimals: 0),
+              _buildChart(data, Colors.deepOrange, 'Température', '°C',   (s) => s.temperature, decimals: 0),
+              _buildChart(data, Colors.blue,       'Humidité',    '%',    (s) => s.humidity,    decimals: 0),
+              _buildChart(data, Colors.green,      'Pression',    ' hPa', (s) => s.pressure,    decimals: 0),
             ],
           );
         },

@@ -215,8 +215,11 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
                           children: [
                             ReorderableDragStartListener(
                               index: index,
-                              child: const Icon(Icons.drag_handle,
-                                  color: Colors.grey),
+                              child: Semantics(
+                                label: 'Réordonner ${property.name}',
+                                child: const Icon(Icons.drag_handle,
+                                    color: Colors.grey),
+                              ),
                             ),
                             PopupMenuButton<String>(
                               onSelected: (value) {
