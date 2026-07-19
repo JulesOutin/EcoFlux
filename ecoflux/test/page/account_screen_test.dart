@@ -86,11 +86,11 @@ void main() {
 
     await tester.enterText(
         find.widgetWithText(TextFormField, 'Nouveau mot de passe (optionnel)'),
-        'nouveauMdp123');
+        'NouveauMdp123!');
     await tester.tap(find.widgetWithText(FilledButton, 'Enregistrer'));
     await tester.pumpAndSettle();
 
-    verify(() => authService.updatePassword('nouveauMdp123')).called(1);
+    verify(() => authService.updatePassword('NouveauMdp123!')).called(1);
   });
 
   testWidgets('signing out calls signOut and navigates to /welcome', (tester) async {

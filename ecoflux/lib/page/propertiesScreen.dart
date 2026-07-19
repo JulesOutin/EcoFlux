@@ -111,8 +111,9 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
       await widget.dataService.deleteProperty(property.id);
       _reload();
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (deleteProperty): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     }
   }

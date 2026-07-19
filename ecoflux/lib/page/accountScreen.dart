@@ -109,12 +109,14 @@ class _AccountScreenState extends State<Accountscreen> {
 
       setState(() => _avatarUrl = url);
     } on StorageException catch (e) {
+      debugPrint('StorageException (uploadAvatar): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur upload : ${e.message}')),
+        const SnackBar(content: Text('Erreur lors de l\'envoi de l\'image, réessaie.')),
       );
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (uploadAvatar): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur base de données : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     } finally {
       setState(() => _uploadingAvatar = false);
@@ -146,8 +148,9 @@ class _AccountScreenState extends State<Accountscreen> {
       );
       _passwordController.clear();
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (saveProfile): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur base de données : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     } on AuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -274,11 +277,30 @@ class _AccountScreenState extends State<Accountscreen> {
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Nouveau mot de passe (optionnel)',
+                          helperText:
+                              'Si renseigné : min. 8 caractères, avec minuscule, '
+                              'majuscule, chiffre et symbole',
+                          helperMaxLines: 2,
                           border: OutlineInputBorder(
                             borderRadius:
                                 BorderRadius.all(Radius.circular(10)),
                           ),
                         ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return null;
+                          if (v.length < 8) {
+                            return 'Au moins 8 caractères';
+                          }
+                          final hasLower = v.contains(RegExp(r'[a-z]'));
+                          final hasUpper = v.contains(RegExp(r'[A-Z]'));
+                          final hasDigit = v.contains(RegExp(r'[0-9]'));
+                          final hasSymbol = v.contains(RegExp(r'[^a-zA-Z0-9]'));
+                          if (!hasLower || !hasUpper || !hasDigit || !hasSymbol) {
+                            return 'Doit contenir minuscule, majuscule, '
+                                'chiffre et symbole';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 24),
                       SizedBox(

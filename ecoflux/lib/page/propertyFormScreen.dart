@@ -100,8 +100,9 @@ class _PropertyFormScreenState extends State<PropertyFormScreen> {
       }
       Navigator.pop(context);
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (saveProperty): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(

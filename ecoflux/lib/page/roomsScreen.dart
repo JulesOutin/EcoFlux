@@ -112,8 +112,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
       await widget.dataService.addRoom(widget.property.id, name, selectedIcon);
       _reload();
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (addRoom): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     }
   }
@@ -170,8 +171,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
       await widget.dataService.updateRoom(room.id, name, selectedIcon);
       _reload();
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (updateRoom): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     }
   }
@@ -205,8 +207,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
       await widget.dataService.deleteRoom(room.id);
       _reload();
     } on PostgrestException catch (e) {
+      debugPrint('PostgrestException (deleteRoom): ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : ${e.message}')),
+        const SnackBar(content: Text('Une erreur est survenue, réessaie.')),
       );
     }
   }

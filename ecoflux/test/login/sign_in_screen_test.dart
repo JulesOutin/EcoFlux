@@ -26,7 +26,7 @@ void main() {
     await tester.pumpWidget(buildSubject());
 
     await tester.enterText(find.byType(TextFormField).at(0), 'test@ecoflux.dev');
-    await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
+    await tester.enterText(find.byType(TextFormField).at(1), 'Secret123!');
     await tester.enterText(find.byType(TextFormField).at(2), 'different');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
     await tester.pumpAndSettle();
@@ -40,12 +40,12 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.enterText(find.byType(TextFormField).at(0), 'test@ecoflux.dev');
-    await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
-    await tester.enterText(find.byType(TextFormField).at(2), 'secret123');
+    await tester.enterText(find.byType(TextFormField).at(1), 'Secret123!');
+    await tester.enterText(find.byType(TextFormField).at(2), 'Secret123!');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
     await tester.pumpAndSettle();
 
-    verify(() => authService.signUp('test@ecoflux.dev', 'secret123')).called(1);
+    verify(() => authService.signUp('test@ecoflux.dev', 'Secret123!')).called(1);
     expect(find.text('Properties screen'), findsOneWidget);
   });
 
@@ -55,11 +55,27 @@ void main() {
 
     await tester.pumpWidget(buildSubject());
     await tester.enterText(find.byType(TextFormField).at(0), 'test@ecoflux.dev');
-    await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
-    await tester.enterText(find.byType(TextFormField).at(2), 'secret123');
+    await tester.enterText(find.byType(TextFormField).at(1), 'Secret123!');
+    await tester.enterText(find.byType(TextFormField).at(2), 'Secret123!');
     await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
     await tester.pumpAndSettle();
 
     expect(find.text('User already registered'), findsOneWidget);
+  });
+
+  testWidgets('shows a validation error when the password lacks complexity',
+      (tester) async {
+    await tester.pumpWidget(buildSubject());
+    await tester.enterText(find.byType(TextFormField).at(0), 'test@ecoflux.dev');
+    await tester.enterText(find.byType(TextFormField).at(1), 'alllowercase1');
+    await tester.enterText(find.byType(TextFormField).at(2), 'alllowercase1');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Sign In'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Must include lowercase, uppercase, a digit and a symbol'),
+      findsOneWidget,
+    );
+    verifyNever(() => authService.signUp(any(), any()));
   });
 }

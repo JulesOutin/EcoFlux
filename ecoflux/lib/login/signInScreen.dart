@@ -70,11 +70,24 @@ class _SigninscreenState extends State<Signinscreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(10.0))
                     ),
-                    labelText: 'Password'
+                    labelText: 'Password',
+                    helperText:
+                        'Min. 8 characters, with lowercase, uppercase, a digit and a symbol',
+                    helperMaxLines: 2,
                     ),
                   validator: (String? value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
+                    }
+                    if (value.length < 8) {
+                      return 'Password must be at least 8 characters';
+                    }
+                    final hasLower = value.contains(RegExp(r'[a-z]'));
+                    final hasUpper = value.contains(RegExp(r'[A-Z]'));
+                    final hasDigit = value.contains(RegExp(r'[0-9]'));
+                    final hasSymbol = value.contains(RegExp(r'[^a-zA-Z0-9]'));
+                    if (!hasLower || !hasUpper || !hasDigit || !hasSymbol) {
+                      return 'Must include lowercase, uppercase, a digit and a symbol';
                     }
                     return null;
                   },
