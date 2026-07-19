@@ -12,7 +12,6 @@ Le projet se compose de deux parties :
 - Authentification (connexion / inscription) via Supabase Auth
 - Gestion multi-logements (appartement, maison, etc.) et de leurs pièces
 - Ajout, renommage, suppression et réorganisation (drag & drop) des pièces
-- Rattachement de capteurs manuels à une pièce
 - Tableau de bord par pièce avec graphiques (température, humidité, pression) via `fl_chart`
 - Gestion du profil utilisateur
 - Simulation et injection de données de capteurs (historique ou temps réel) via `main.py`
@@ -24,7 +23,7 @@ EcoFlux/
 ├── ecoflux/                  # Application Flutter
 │   ├── lib/
 │   │   ├── login/            # Écrans de connexion / inscription
-│   │   ├── page/             # Écrans principaux (logements, pièces, dashboard, capteurs, compte)
+│   │   ├── page/             # Écrans principaux (logements, pièces, dashboard, compte)
 │   │   ├── models/           # Modèles de données (Property, Room, SensorData)
 │   │   ├── services/         # Accès aux données (Supabase)
 │   │   └── main.dart         # Point d'entrée + routing
@@ -36,7 +35,7 @@ EcoFlux/
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (`^3.11.0`)
 - Python 3.9+
-- Un projet [Supabase](https://supabase.com) avec les tables `properties`, `rooms`, `sensors` et `sensor_readings`
+- Un projet [Supabase](https://supabase.com) avec les tables `properties`, `rooms` et `sensor_readings`
 
 ## Configuration
 
@@ -78,4 +77,4 @@ python main.py import --room-id <uuid>           # Importe ecoflux/assets/data.c
 
 ## Base de données
 
-Le schéma des capteurs manuels (`sensors`) et ses policies RLS se trouvent dans [`ecoflux/supabase/sensors_table.sql`](ecoflux/supabase/sensors_table.sql), à exécuter depuis le SQL Editor du dashboard Supabase.
+Le schéma des tables et leurs policies RLS sont versionnés dans `ecoflux/supabase/` (migrations Supabase CLI).

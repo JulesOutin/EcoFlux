@@ -27,6 +27,9 @@ migrate_working_dir/
 *.iws
 .idea/
 
+# Supabase CLI
+ecoflux/supabase/.temp/
+
 # Flutter / Dart / Pub
 **/doc/api/
 **/ios/Flutter/.last_build_id
