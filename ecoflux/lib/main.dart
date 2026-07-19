@@ -27,6 +27,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
+      ),
       home: AuthGate(authService: authService, dataService: dataService),
       routes: {
         '/welcome':    (context) => const Welcome(),
