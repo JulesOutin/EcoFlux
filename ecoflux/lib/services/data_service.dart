@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/services.dart';
 import '../models/property_models.dart';
 
@@ -18,6 +19,11 @@ abstract class IDataService {
 
   // Capteurs
   Stream<List<SensorData>> getSensorData(String roomId);
+
+  // Profil
+  Future<Profile> getProfile(String userId);
+  Future<void> updateProfile(String userId, {String? firstName, String? lastName});
+  Future<String> uploadAvatar(String userId, File file);
 }
 
 class CsvDataService implements IDataService {
@@ -73,4 +79,16 @@ class CsvDataService implements IDataService {
     final raw = await rootBundle.loadString(_csvPath);
     return raw.trim().split('\n').skip(1).map(SensorData.fromCsv).toList();
   }
+
+  @override
+  Future<Profile> getProfile(String userId) =>
+      throw UnimplementedError('CsvDataService ne supporte pas getProfile');
+
+  @override
+  Future<void> updateProfile(String userId, {String? firstName, String? lastName}) =>
+      throw UnimplementedError('CsvDataService ne supporte pas updateProfile');
+
+  @override
+  Future<String> uploadAvatar(String userId, File file) =>
+      throw UnimplementedError('CsvDataService ne supporte pas uploadAvatar');
 }

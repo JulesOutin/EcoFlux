@@ -57,6 +57,20 @@ class Room {
   );
 }
 
+class Profile {
+  final String? firstName;
+  final String? lastName;
+  final String? avatarUrl;
+
+  const Profile({this.firstName, this.lastName, this.avatarUrl});
+
+  factory Profile.fromMap(Map<String, dynamic> map) => Profile(
+    firstName: map['first_name'] as String?,
+    lastName:  map['last_name']  as String?,
+    avatarUrl: map['avatar_url'] as String?,
+  );
+}
+
 class Property {
   final String id;
   final String name;

@@ -2,10 +2,12 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 
 class Signinscreen extends StatefulWidget {
-  const Signinscreen({super.key});
+  final IAuthService authService;
+  const Signinscreen({super.key, required this.authService});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -14,7 +16,6 @@ class Signinscreen extends StatefulWidget {
 
 
 class _SigninscreenState extends State<Signinscreen> {
-  final SupabaseClient _auth = Supabase.instance.client;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
@@ -115,9 +116,9 @@ class _SigninscreenState extends State<Signinscreen> {
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       try {
-                        await _auth.auth.signUp(
-                          email: _email,
-                          password: _password,
+                        await widget.authService.signUp(
+                          _email,
+                          _password,
                         );
                         Navigator.of(context).pushNamedAndRemoveUntil(
                           '/properties',

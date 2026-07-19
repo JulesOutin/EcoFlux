@@ -8,10 +8,12 @@ import 'page/dashboardScreen.dart';
 import 'page/accountScreen.dart';
 import 'welcome.dart';
 import 'models/property_models.dart';
+import 'services/auth_service.dart';
 import 'services/data_service.dart';
 import 'services/supabase_service.dart';
 
 final IDataService dataService = SupabaseDataService();
+final IAuthService authService = SupabaseAuthService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,36 +27,45 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const AuthGate(),
+      home: AuthGate(authService: authService, dataService: dataService),
       routes: {
         '/welcome':    (context) => const Welcome(),
-        '/login':      (context) => const LoginScreen(),
-        '/signup':     (context) => const Signinscreen(),
+        '/login':      (context) => LoginScreen(authService: authService),
+        '/signup':     (context) => Signinscreen(authService: authService),
         '/properties': (context) => PropertiesScreen(dataService: dataService),
         '/dashboard':  (context) {
           final room = ModalRoute.of(context)!.settings.arguments as Room;
           return DashboardScreen(room: room, dataService: dataService);
         },
-        '/account':    (context) => const Accountscreen(),
+        '/account':    (context) => Accountscreen(
+              authService: authService,
+              dataService: dataService,
+            ),
       },
     );
   }
 }
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+  final IAuthService authService;
+  final IDataService dataService;
+  const AuthGate({
+    super.key,
+    required this.authService,
+    required this.dataService,
+  });
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<AuthState>(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
+      stream: authService.onAuthStateChange,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final session = Supabase.instance.client.auth.currentSession;
+        final session = authService.currentSession;
         if (session != null) {
           return PropertiesScreen(dataService: dataService);
         }

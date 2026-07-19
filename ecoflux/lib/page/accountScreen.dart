@@ -4,16 +4,23 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/auth_service.dart';
+import '../services/data_service.dart';
 
 class Accountscreen extends StatefulWidget {
-  const Accountscreen({super.key});
+  final IAuthService authService;
+  final IDataService dataService;
+  const Accountscreen({
+    super.key,
+    required this.authService,
+    required this.dataService,
+  });
 
   @override
   State<Accountscreen> createState() => _AccountScreenState();
 }
 
 class _AccountScreenState extends State<Accountscreen> {
-  final _supabase = Supabase.instance.client;
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -39,7 +46,7 @@ class _AccountScreenState extends State<Accountscreen> {
   }
 
   Future<void> _loadProfile() async {
-    final user = _supabase.auth.currentUser;
+    final user = widget.authService.currentUser;
     if (user == null) return;
 
     final meta = user.userMetadata ?? {};
@@ -47,19 +54,14 @@ class _AccountScreenState extends State<Accountscreen> {
     _lastNameController.text  = meta['last_name']  as String? ?? '';
 
     try {
-      final data = await _supabase
-          .from('profiles')
-          .select('first_name, last_name, avatar_url')
-          .eq('id', user.id)
-          .maybeSingle();
-
-      if (data != null) {
-        _firstNameController.text =
-            data['first_name'] as String? ?? _firstNameController.text;
-        _lastNameController.text =
-            data['last_name'] as String? ?? _lastNameController.text;
-        _avatarUrl = data['avatar_url'] as String?;
+      final profile = await widget.dataService.getProfile(user.id);
+      if (profile.firstName != null) {
+        _firstNameController.text = profile.firstName!;
       }
+      if (profile.lastName != null) {
+        _lastNameController.text = profile.lastName!;
+      }
+      _avatarUrl = profile.avatarUrl;
     } on PostgrestException {
       // RLS bloque ou table absente — on garde les valeurs de user_metadata
     }
@@ -101,27 +103,11 @@ class _AccountScreenState extends State<Accountscreen> {
 
     setState(() => _uploadingAvatar = true);
     try {
-      final userId = _supabase.auth.currentUser!.id;
+      final userId = widget.authService.currentUser!.id;
       final file = File(picked.path);
-      final path = '$userId/avatar.jpg';
+      final url = await widget.dataService.uploadAvatar(userId, file);
 
-      await _supabase.storage.from('avatars').upload(
-        path,
-        file,
-        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
-      );
-
-      final url = _supabase.storage.from('avatars').getPublicUrl(path);
-      // Bust cache en ajoutant un timestamp
-      final cacheBustedUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}';
-
-      await _supabase.from('profiles').upsert({
-        'id':         userId,
-        'avatar_url': cacheBustedUrl,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-
-      setState(() => _avatarUrl = cacheBustedUrl);
+      setState(() => _avatarUrl = url);
     } on StorageException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur upload : ${e.message}')),
@@ -142,18 +128,17 @@ class _AccountScreenState extends State<Accountscreen> {
     final firstName = _firstNameController.text.trim();
     final lastName  = _lastNameController.text.trim();
     final password  = _passwordController.text;
-    final userId    = _supabase.auth.currentUser!.id;
+    final userId    = widget.authService.currentUser!.id;
 
     try {
-      await _supabase.from('profiles').upsert({
-        'id':         userId,
-        'first_name': firstName,
-        'last_name':  lastName,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
+      await widget.dataService.updateProfile(
+        userId,
+        firstName: firstName,
+        lastName: lastName,
+      );
 
       if (password.isNotEmpty) {
-        await _supabase.auth.updateUser(UserAttributes(password: password));
+        await widget.authService.updatePassword(password);
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -179,7 +164,7 @@ class _AccountScreenState extends State<Accountscreen> {
 
   Future<void> _signOut() async {
     final navigator = Navigator.of(context);
-    await _supabase.auth.signOut();
+    await widget.authService.signOut();
     navigator.pushNamedAndRemoveUntil('/welcome', (route) => false);
   }
 

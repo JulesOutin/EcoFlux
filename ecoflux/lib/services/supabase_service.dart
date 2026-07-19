@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/property_models.dart';
 import 'data_service.dart';
@@ -143,5 +144,48 @@ class SupabaseDataService implements IDataService {
       yield readings;
       await Future.delayed(const Duration(seconds: 10));
     }
+  }
+
+  // ── Profil ─────────────────────────────────────────────────────────────────
+
+  @override
+  Future<Profile> getProfile(String userId) async {
+    final data = await _supabase
+        .from('profiles')
+        .select('first_name, last_name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle();
+    return data != null ? Profile.fromMap(data) : const Profile();
+  }
+
+  @override
+  Future<void> updateProfile(String userId, {String? firstName, String? lastName}) async {
+    await _supabase.from('profiles').upsert({
+      'id': userId,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+  }
+
+  @override
+  Future<String> uploadAvatar(String userId, File file) async {
+    final path = '$userId/avatar.jpg';
+    await _supabase.storage.from('avatars').upload(
+      path,
+      file,
+      fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+    );
+    final url = _supabase.storage.from('avatars').getPublicUrl(path);
+    // Bust cache en ajoutant un timestamp
+    final cacheBustedUrl = '$url?t=${DateTime.now().millisecondsSinceEpoch}';
+
+    await _supabase.from('profiles').upsert({
+      'id': userId,
+      'avatar_url': cacheBustedUrl,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
+
+    return cacheBustedUrl;
   }
 }
